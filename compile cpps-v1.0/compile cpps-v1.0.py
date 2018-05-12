@@ -8,7 +8,10 @@
 import os
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
-import win32api
+from PyQt5 import *
+import win32api, re, shutil, os.path, sys, win32gui, win32con
+from winreg import *
+
 
 class Ui_Dialog(object):
     FilePath=os.getcwd()
@@ -76,7 +79,7 @@ class Ui_Dialog(object):
         if self.list_dir.count()==0:
 #            reply = QMessageBox.information(self.pushButton_3, "提示", "请选择CPP文件！", QMessageBox.Ok)
 #            self.pushButton_3.echo(reply)
-            QMessageBox.information(self.pushButton_3, "提示", "请导入文件夹并选择CPP文件！", QMessageBox.Ok)
+            QMessageBox.information(self.pushButton_3, "Warring", "Please choose the folder！", QMessageBox.Ok)
         else:
             filename = str(self.list_dir.currentItem().text())
             cppfile =  self.FilePath+'//'+filename
@@ -89,12 +92,12 @@ class Ui_Dialog(object):
             elif os.path.isfile(self.currectPath+'//'+filename[:-4]+'.exe'):
                 win32api.ShellExecute(0, 'open', self.currectPath+'//'+filename[:-4]+'.exe', '','',1)
             else:
-                QMessageBox.information(self.pushButton_3, "提示", "exe文件未生成或不在默认目录中！", QMessageBox.Ok)
+                QMessageBox.information(self.pushButton_3, "Warring", "\'exe\'file did not export！", QMessageBox.Ok)
                 
         
         
     def buttonclicked_BrowFile(self, event):
-        dirname = QFileDialog.getExistingDirectory(self.pushButton_1,"选择文件夹", self.FilePath)
+        dirname = QFileDialog.getExistingDirectory(self.pushButton_1,"Please choose folder ", self.FilePath)
         if dirname !='':
             self.lineEdit.setText(dirname)
             self.FilePath = dirname
@@ -102,13 +105,22 @@ class Ui_Dialog(object):
             if (os.path.isfile(dirname+'//'+file_stdafx)==False):
                 with open(dirname+'//'+file_stdafx, 'w')as tmp1:
                     tmp1.close
-                
-                
         else:
             dirname = self.FilePath
         allfiles = os.listdir(self.lineEdit.text())
         for file_name in allfiles:
             if (file_name[-4:] == ".cpp"):
+                pattern=re.compile(r'id_\d{5,7}_[\u4e00-\u9fa5)+]{2,5}_\d{1,2}_\d{1,2}.cpp')
+                if (file_name!=''):
+                    pattern = re.compile(r'_\d{5,7}_')
+                    st_number=pattern.findall(file_name)[0]
+                    pattern=re.compile(r'_\d{1,2}_\d{1,2}')
+                    cpp_number = pattern.findall(file_name)[0]
+                    pattern=re.compile(u"[\u4e00-\u9fa5]+")
+                    st_name= pattern.findall(file_name)[0]
+                    new_filename='id'+st_number+st_name+cpp_number+'.cpp'
+                    os.rename( self.FilePath+'\\'+file_name,  self.FilePath+'\\'+new_filename)
+                    file_name = new_filename
                 self.list_dir.addItem(str(file_name))    
     
     
@@ -120,9 +132,9 @@ class Ui_Dialog(object):
             if os.path.isfile(filepath):
                 win32api.ShellExecute(0, 'open','notepad.exe', filepath,'',  1)
             else:
-                QMessageBox.information(self.pushButton_2, "提示", "选择的文件不存在！", QMessageBox.Ok)
+                QMessageBox.information(self.pushButton_2, "Warring", "The folder does not exist！", QMessageBox.Ok)
         else:
-            QMessageBox.information(self.pushButton_2, "提示", "请导入文件夹并选择CPP文件！", QMessageBox.Ok)
+            QMessageBox.information(self.pushButton_2, "warring", "Please choose the folder！", QMessageBox.Ok)
         
     def buttonclicked_ReadFile(self, event):
         filepath = self.lineEdit.text()+'//'+str(self.list_dir.currentItem().text())
@@ -139,13 +151,152 @@ class Ui_Dialog(object):
         self.pushButton_3.setText(_translate("Dialog", "Run"))
         self.pushButton_4.setText(_translate("Dialog", "刷新"))
 
+def setenv(env_path, env_lib, env_inculde):
+    reg_dirname = re.compile(r'Microsoft Visual Studio \d{1,2}.\d')  
+    for parent, dirnames, filenames in os.walk(rootdir):
+         for dirname in dirnames:
+            if (reg_dirname.match(dirname)):
+                strfilepath = parent+os.sep+dirname
+                if(os.path.exists(strfilepath+'\\VC\\bin')):
+                    str_bin = strfilepath+'\\VC\\bin'
+#                      print('binfound!')
+                    if(os.path.exists(strfilepath+'\\Common7\\IDE')):
+#                        print('idefound!')
+                        str_ide=strfilepath+'\\Common7\\IDE;'
+                    if(os.path.exists(strfilepath+'\\VC\\include')):
+#                        print('includefound!')
+                        str_include=strfilepath+'\\VC\\include'
+                    if(os.path.exists(strfilepath+'\\VC\\lib')):
+#                        print('libfound!')
+                        str_lib=strfilepath+'\\VC\\lib'
 
+    str_err=''
+    t_path=''
+    t_include=''
+    t_lib=''
+    if(str_ide):
+        if(env_path==None or env_path.find(str_ide)==-1):
+            t_path = ';'+str_ide
+    else:
+        str_err +='IDE,'
+    
+    if(str_bin):
+        if(env_path ==None or env_path.find(str_bin)==-1):
+            t_path +=';'+str_bin
+    else:
+        str_err +='BIN,'
+    
+    if(str_include):
+        if(env_include ==None or env_include.find(str_include)==-1):
+            t_include +=';'+str_include
+    else:
+        str_err+='INCLUDE,'
+#        print(str_include)
+#        print(env_include)
+    
+    if(str_lib):
+        if(env_lib ==None or env_lib.find(str_lib)==-1):
+            t_lib =str_lib
+    else:
+        str_err+='LIB,'
+    
+    if(str_err):
+        win32api.MessageBox(0, "Folder"+str_err+"is not in VC folder！Please make sure Visual Studio is instlled!", "Warring Message", win32con.MB_OK)
+    else:
+        if(t_path):
+            if(env_path):
+                osstr="setx /m PATH \"%PATH%;"+t_path+"\""
+            else:
+                osstr="setx /m PATH \""+t_path+"\""
+            print(osstr)
+            os.popen(osstr)
+        if(t_include):
+            if(env_include):
+                osstr="setx /m INCLUDE \"%INCLUDE%;"+t_include+"\""
+            else:
+                osstr="setx /m INCLUDE \""+t_include+"\""
+            print(osstr)
+            os.popen(osstr) 
+        if(t_lib):
+            if(env_lib):
+                osstr="setx /m LIB \"%LIB%;"+t_lib+"\""
+            else:
+                osstr="setx /m LIB \""+t_lib+"\""
+            print(osstr)
+            os.popen(osstr) 
+        return(str_lib)
+    
 if __name__ == "__main__":
     import sys
-    app = QtWidgets.QApplication(sys.argv)
-    Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
-    ui.setupUi(Dialog)
-    Dialog.show()
-    sys.exit(app.exec_())
+    env_path= os.getenv('PATH')
+    env_lib=os.getenv('LIB')
+    env_include=os.getenv('INCLUDE')
+    
+    rs_ide=''
+    rs_bin=''
+    rs_include=''
+    rs_lib=''
+    rootdir ='c:\\'
+#    reg_dirname = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d(((\\VC\\lib|\\Common7\\IDE)|\\VC\\bin)|\\VC\\include)',re.I)
+#    it = reg_dirname.finditer(a)
+#    for match in it:
+#        print(match.group())
+    reg_bin = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\VC\\bin',re.I)
+    if(env_path and reg_bin.search(env_path)):
+        rs_bin = reg_bin.search(env_path).group()
+    reg_ide = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\Common7\\IDE',re.I)
+    if(env_path and reg_ide.search(env_path)):
+        rs_ide = reg_ide.search(env_path).group()
+    reg_lib = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\VC\\lib',re.I)
+    if(env_lib and reg_lib.search(env_lib)):
+        rs_lib=reg_lib.search(env_lib).group()
+    reg_include = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\VC\\include',re.I)
+    if(env_include and reg_include.search(env_include)):
+        rs_include=reg_include.search(env_include).group()
+    
+    if(rs_bin and os.path.exists(rs_bin)):
+        if (rs_ide and os.path.exists(rs_ide)):
+            if(rs_lib and os.path.exists(rs_lib)):
+                if(rs_include and os.path.exists(rs_include)):
+                    print('your computer do not need set environment')
+                    strfilepath=rs_lib
+                else:
+                    strfilepath=setenv(env_path, env_lib, env_include)
+#                    env_lib=os.getenv('LIB')
+#                    strfilepath= reg_lib.search(env_lib).group()
+            else:
+                strfilepath=setenv(env_path, env_lib, env_include)
+#                env_lib=os.getenv('LIB')
+#                print(env_lib)
+#                strfilepath= reg_lib.search(env_lib).group()
+        else:
+            strfilepath=setenv(env_path, env_lib, env_include)
+#            env_lib=os.getenv('LIB')
+#            strfilepath= reg_lib.search(env_lib).group()
+    else:
+        strfilepath=setenv(env_path, env_lib, env_include)
+#        env_lib=os.getenv('LIB')
+#        print(env_lib)
+#        strfilepath= reg_lib.search(env_lib).group()
+        
+    if(os.path.isfile(strfilepath+'\\Kernel32.Lib')==False):
+        print(strfilepath+'\\Kernel32.Lib')
+        cpath=os.getcwd()+'\\Kernel32.Lib'
+        if(os.path.isfile(cpath)):
+            tpath=strfilepath+'\\Kernel32.Lib'
+            shutil.copyfile(cpath, tpath)
+        else:
+            win32api.MessageBox(0, "\'Kernel32.Lib\' file is not in the currect folder,please copy it to folder \'VC\\lib\'!", "Warring Message", win32con.MB_OK)
+            sys.exit()
+    
+    if(rs_ide!='' and rs_bin!= '' and rs_include !='' and rs_lib!=''):
+        app = QtWidgets.QApplication(sys.argv)
+        Dialog = QtWidgets.QDialog()
+        ui = Ui_Dialog()
+        ui.setupUi(Dialog)
+        Dialog.show()
+        sys.exit(app.exec_())
+    else:
+        win32api.MessageBox(0, "We have set environment for you,please restart the cpps.exe", "Warring Message", win32con.MB_OK)
+        sys.exit()
 
