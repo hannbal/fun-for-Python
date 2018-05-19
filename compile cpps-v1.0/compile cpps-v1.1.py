@@ -174,6 +174,10 @@ class Ui_Dialog(object):
         self.pushButton_4.setText(_translate("Dialog", "刷新"))
 
 def setenv(env_path, env_lib, env_inculde):
+    str_ide=''
+    str_bin=''
+    str_include=''
+    str_lib=''
     reg_dirname = re.compile(r'Microsoft Visual Studio \d{1,2}.\d')  
     for parent, dirnames, filenames in os.walk(rootdir):
          for dirname in dirnames:
