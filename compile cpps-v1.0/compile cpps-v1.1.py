@@ -164,10 +164,13 @@ class Ui_Dialog(object):
             QMessageBox.information(self.pushButton_2, "warring", "Please choose the folder！", QMessageBox.Ok)
         
     def buttonclicked_ReadFile(self, event):
-        filepath = self.lineEdit.text()+'//'+str(self.list_dir.currentItem().text())
-        with open(filepath, "r")as tmp1:
-            self.QPlainTextEdit_1.setText(tmp1.read())
-            tmp1.close()
+        if self.list_dir.currentItem():
+            filepath = self.lineEdit.text()+'//'+str(self.list_dir.currentItem().text())
+            with open(filepath, "r")as tmp1:
+                self.QPlainTextEdit_1.setText(tmp1.read())
+                tmp1.close()
+        else:
+            QMessageBox.information(self.pushButton_4 ,"Warring", "Please select the file first！", QMessageBox.Ok)
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
