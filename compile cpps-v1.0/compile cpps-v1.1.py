@@ -129,17 +129,22 @@ class Ui_Dialog(object):
         allfiles = os.listdir(self.lineEdit.text())
         for file_name in allfiles:
             if (file_name[-4:] == ".cpp"):
+                st_number=cpp_number=st_name=''
                 pattern=re.compile(r'id_\d{5,7}_[\u4e00-\u9fa5)+]{2,5}_\d{1,2}_\d{1,2}.cpp')
                 if (file_name!=''):
-                    pattern = re.compile(r'_\d{5,7}_')
-                    st_number=pattern.findall(file_name)[0]
+                    pattern = re.compile(r'\d{5,7}_')
+                    if pattern.findall(file_name):
+                        st_number=pattern.findall(file_name)[0]
                     pattern=re.compile(r'_\d{1,2}_\d{1,2}')
-                    cpp_number = pattern.findall(file_name)[0]
+                    if pattern.findall(file_name):
+                        cpp_number = pattern.findall(file_name)[0]
                     pattern=re.compile(u"[\u4e00-\u9fa5]+")
-                    st_name= pattern.findall(file_name)[0]
+                    if pattern.findall(file_name):
+                        st_name= pattern.findall(file_name)[0]
                     new_filename='id'+st_number+st_name+cpp_number+'.cpp'
-                    os.rename( self.FilePath+'\\'+file_name,  self.FilePath+'\\'+new_filename)
-                    file_name = new_filename
+                    if new_filename!='id.cpp':
+                        os.rename( self.FilePath+'\\'+file_name,  self.FilePath+'\\'+new_filename)
+                        file_name = new_filename
                 self.list_dir.addItem(str(file_name))    
     
     
