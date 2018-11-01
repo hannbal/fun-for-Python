@@ -210,6 +210,7 @@ class Ui_Dialog(object):
     
     
     def env_do(self,strfilepath ):
+        print(strfilepath)
         env_path=self.env_path
         env_lib=self.env_lib
         env_include=self.env_include
@@ -262,9 +263,10 @@ class Ui_Dialog(object):
         else:
             str_err+='LIB,'
     
-        if(str_err):
-            win32api.MessageBox(0, "Folder"+str_err+"is not in "+strfilepath+"\\VC folder！Please make sure Visual Studio is instlled!", "Warring Message", win32con.MB_OK)
-        else:
+#        if(str_err):
+#            win32api.MessageBox(0, "Folder"+str_err+"is not in "+strfilepath+"\\VC folder！Please make sure Visual Studio is instlled!", "Warring Message", win32con.MB_OK)
+        print("str_err:"+str_err)
+        if(str_err==''):
             win32api.MessageBox(0, "The apps is setting environment,plase wait for a moment!", "Warring Message", win32con.MB_OK)
             if(t_path):
                 if(env_path):
@@ -289,20 +291,21 @@ class Ui_Dialog(object):
                 os.popen(osstr) 
             status+=1
  
-        if(os.path.isfile(strfilepath+'\\Kernel32.Lib')==False):
-            print(strfilepath+'\\Kernel32.Lib')
+        if(str_err=='' and os.path.isfile(strfilepath+'\\VC\\lib\\Kernel32.Lib')==False):
+            print(strfilepath+'\\VC\\lib\\Kernel32.Lib')
             cpath=os.getcwd()+'\\Kernel32.Lib'
             if(os.path.isfile(cpath)):
-                tpath=strfilepath+'\\Kernel32.Lib'
+                tpath=strfilepath+'\\VC\\lib\\Kernel32.Lib'
                 try:
                     shutil.copyfile(cpath, tpath)
                     status+=1
-                except Exception :
-                    win32api.MessageBox(0, "Copy kernel132.lib faild,please copy it to VS folder", "PermissionError Message", win32con.MB_OK)
+                except Exception as err:
+                    win32api.MessageBox(0, err, "PermissionError Message", win32con.MB_OK)
             else:
                 win32api.MessageBox(0, "\'Kernel32.Lib\' file is not in the currect folder,please copy it to folder \'VC\\lib\'!", "Warring Message", win32con.MB_OK)
         else:
             status+=1
+        print(status)
         if status==2:
             self.setRunbutton(False)
             win32api.MessageBox(0, "We have set environment variables for you,please restart the Apps", "Warring Message", win32con.MB_OK)
@@ -347,10 +350,19 @@ if __name__ == "__main__":
         win32api.MessageBox(0,"Your computer doesn't need to set environment varialbes!", "Ok Message")
         strfilepath=rs_lib
         env_ok=True
-        
+        tpath=rs_lib+'\\Kernel32.Lib'
+        if (os.path.isfile(tpath)==False):
+            cpath=os.getcwd()+'\\Kernel32.Lib'
+            try:
+                shutil.copyfile(cpath, tpath)
+            except Exception :
+                win32api.MessageBox(0, "We haven't right to copy 'kernel132.lib' into 'xxx\Microsoft Visual Studio xx\VC\lib\' ,please copy it", "PermissionError Message", win32con.MB_OK)
     else:
         win32api.MessageBox(0,"Please set Visual Studio folder first!")
-     
+    
+   
+  
+  
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
     ui = Ui_Dialog()
