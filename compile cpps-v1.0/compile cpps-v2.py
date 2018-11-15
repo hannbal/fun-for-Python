@@ -103,12 +103,26 @@ class Ui_Dialog(object):
         self.list_dir.clicked.connect(self.buttonclicked_ReadFile)
         self.pushButton_5.clicked.connect(self.setenv)
         
+    def create_headfile(self, path):    
+        file=path+"\\stdafx.h"
+        with open(file, 'w') as tmp:
+            vaule='#pragma once \n #include "targetver.h" \n #include <stdio.h> \n #include <tchar.h>'
+            tmp.write(vaule)
+        file=path+"\\targetver.h"
+        with open(file, 'w') as tmp:
+            vaule='#pragma once \n '
+            tmp.write(vaule)
+
+            
+    
     
     def buttonclicked_Run(self, event):
         if self.list_dir.currentItem() ==None:
             QMessageBox.information(self.pushButton_3, "Warring", "Please choose the folder and cpp file！", QMessageBox.Ok)
         else:
+            
             filename = str(self.list_dir.currentItem().text())
+            self.create_headfile(self.allfiles[filename])
             cppfile =  self.allfiles[filename]+filename
             osstr="cd "+'"'+ str(self.allfiles[filename])+'"'+" && cl /EHsc "+'"'+str(cppfile.replace("//", "\\"))+'"'
             extext=os.popen(osstr).read()
