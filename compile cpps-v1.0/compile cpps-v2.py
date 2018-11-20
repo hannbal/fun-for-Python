@@ -6,6 +6,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 import os
+import codecs
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.Qsci import  QsciLexerCPP
@@ -105,11 +106,11 @@ class Ui_Dialog(object):
         
     def create_headfile(self, path):    
         file=path+"\\stdafx.h"
-        with open(file, 'w') as tmp:
+        with  codecs.open(file, 'w') as tmp:
             vaule='#pragma once \n #include "targetver.h" \n #include <stdio.h> \n #include <tchar.h>'
             tmp.write(vaule)
         file=path+"\\targetver.h"
-        with open(file, 'w') as tmp:
+        with  codecs.open(file, 'w') as tmp:
             vaule='#pragma once \n '
             tmp.write(vaule)
 
@@ -157,7 +158,7 @@ class Ui_Dialog(object):
             file_stdafx = "stdafx.h"
             if (os.path.isfile(dirname+'//'+file_stdafx)==False):
                 try:
-                    with open(dirname+'//'+file_stdafx, 'w')as tmp1:
+                    with  codecs.open(dirname+'//'+file_stdafx, 'w')as tmp1:
                         tmp1.close
                 except Exception :
                     QMessageBox.information(self.pushButton_1, "Error", "Please choose right folder", QMessageBox.Ok)
@@ -177,7 +178,7 @@ class Ui_Dialog(object):
             print(filepath)
             if os.path.isfile(filepath):
 #                win32api.ShellExecute(0, 'open','notepad.exe', filepath,'',  1)
-                with open(filepath, 'w')as tmp:
+                with  codecs.open(filepath, 'w')as tmp:
                     print(self.QPlainTextEdit_1.text())
                     tmp.write(self.QPlainTextEdit_1.text())
             else:
@@ -189,13 +190,18 @@ class Ui_Dialog(object):
 #        print(self.allfiles)
         filepath = self.allfiles[str(self.list_dir.currentItem().text())]+str(self.list_dir.currentItem().text())
         try:
-            with open(filepath, "r")as tmp1:
+            with codecs.open(filepath, "r", encoding='utf-8')as tmp1:
                 self.QPlainTextEdit_1.setText(tmp1.read())
             tmp1.close()
-        except UnicodeDecodeError as err:
-            with open(filepath, "r",encoding='utf-16-le')as tmp1:
-                self.QPlainTextEdit_1.setText(tmp1.read())
-            tmp1.close()
+        except UnicodeDecodeError as err1:
+            try:
+                with  codecs.open(filepath, "r", encoding='gbk')as tmp1:
+                    self.QPlainTextEdit_1.setText(tmp1.read())
+                tmp1.close()
+            except UnicodeDecodeError as err2:
+                with  codecs.open(filepath, "r",encoding='utf-16-le')as tmp1:
+                    self.QPlainTextEdit_1.setText(tmp1.read())
+                tmp1.close()
 
   
         
@@ -220,7 +226,7 @@ class Ui_Dialog(object):
             for dir in dirlist:
                 self.env_do(dir)
         else:
-            win32api.MessageBox(0, "Folder"+str_err+"is not in "+strfilepath+"\\VC folder！Please make sure Visual Studio is instlled!", "Warring Message", win32con.MB_OK)
+            win32api.MessageBox(0, "Folder Microsoft Visual Studio is not in "+strfilepath+"\\VC folder！Please make sure Visual Studio is instlled!", "Warring Message", win32con.MB_OK)
     
     
     def env_do(self,strfilepath ):
@@ -236,9 +242,9 @@ class Ui_Dialog(object):
         if(os.path.exists(strfilepath+'\\VC\\bin')):
             str_bin = strfilepath+'\\VC\\bin'
 #                      print('binfound!')
-        if(os.path.exists(strfilepath+'\\Common7\\IDE')):
-#                        print('idefound!')
-            str_ide=strfilepath+'\\Common7\\IDE;'
+#        if(os.path.exists(strfilepath+'\\Common7\\IDE')):
+##                        print('idefound!')
+#            str_ide=strfilepath+'\\Common7\\IDE;'
         if(os.path.exists(strfilepath+'\\VC\\include')):
 #                        print('includefound!')
             str_include=strfilepath+'\\VC\\include'
@@ -251,11 +257,11 @@ class Ui_Dialog(object):
         t_path=''
         t_include=''
         t_lib=''
-        if(str_ide):
-            if(env_path==None or env_path.find(str_ide)==-1):
-                t_path = ';'+str_ide
-        else:
-            str_err +='IDE,'
+#        if(str_ide):
+#            if(env_path==None or env_path.find(str_ide)==-1):
+#                t_path = ';'+str_ide
+#        else:
+#            str_err +='IDE,'
     
         if(str_bin):
             if(env_path ==None or env_path.find(str_bin)==-1):
@@ -335,7 +341,6 @@ class Ui_Dialog(object):
  
     
 if __name__ == "__main__":
-    import sys
     env_path= os.getenv('PATH')
     env_lib=os.getenv('LIB')
     env_include=os.getenv('INCLUDE')
@@ -346,20 +351,21 @@ if __name__ == "__main__":
     rs_lib=''
     rootdir ='c:\\'
 
-    reg_bin = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\VC\\bin',re.I)
+    reg_bin = re.compile(r'\S:\\[^;]*Microsoft Visual Studio \d{0,2}.\d\\VC\\bin',re.I)
     if(env_path and reg_bin.search(env_path)):
         rs_bin = reg_bin.search(env_path).group()
-    reg_ide = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\Common7\\IDE',re.I)
-    if(env_path and reg_ide.search(env_path)):
-        rs_ide = reg_ide.search(env_path).group()
-    reg_lib = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\VC\\lib',re.I)
+#    reg_ide = re.compile(r'[^;]*Microsoft Visual Studio \d{0,2}.\d\\Common7\\IDE',re.I)
+#    if(env_path and reg_ide.search(env_path)):
+#        rs_ide = reg_ide.search(env_path).group()
+    reg_lib = re.compile(r'\S:\\[^;]*Microsoft Visual Studio \d{0,2}.\d\\VC\\lib',re.I)
     if(env_lib and reg_lib.search(env_lib)):
         rs_lib=reg_lib.search(env_lib).group()
-    reg_include = re.compile(r'c:\\[^;]*Microsoft Visual Studio \d{1,2}.\d\\VC\\include',re.I)
+    reg_include = re.compile(r'\S:\\[^;]*Microsoft Visual Studio \d{0,2}.\d\\VC\\include',re.I)
     if(env_include and reg_include.search(env_include)):
         rs_include=reg_include.search(env_include).group()
     
-    if(rs_bin and os.path.exists(rs_bin) and rs_ide and os.path.exists(rs_ide) and rs_lib and os.path.exists(rs_lib) and rs_include and os.path.exists(rs_include)):
+    if(rs_bin and os.path.exists(rs_bin) and rs_lib and os.path.exists(rs_lib) and rs_include and os.path.exists(rs_include)):
+    #if(rs_bin and os.path.exists(rs_bin) and rs_ide and os.path.exists(rs_ide) and rs_lib and os.path.exists(rs_lib) and rs_include and os.path.exists(rs_include)):
         print('Your computer do not need set environment')
         win32api.MessageBox(0,"Your computer doesn't need to set environment varialbes!", "Ok Message")
         strfilepath=rs_lib
@@ -372,6 +378,7 @@ if __name__ == "__main__":
             except Exception :
                 win32api.MessageBox(0, "We haven't right to copy 'kernel132.lib' into 'xxx\Microsoft Visual Studio xx\VC\lib\' ,please copy it", "PermissionError Message", win32con.MB_OK)
     else:
+#        print(rs_bin ,  os.path.exists(rs_bin) ,  rs_lib ,  os.path.exists(rs_lib) ,  rs_include ,  os.path.exists(rs_include))
         win32api.MessageBox(0,"Please set Visual Studio folder first!")
     
    
@@ -382,7 +389,8 @@ if __name__ == "__main__":
     ui = Ui_Dialog()
     ui.setupUi(Dialog)
     ui.QPlainTextEdit_1.setLexer(QsciLexerCPP())
-    if(rs_ide!='' and rs_bin!= '' and rs_include !='' and rs_lib!=''):
+    if(rs_bin!= '' and rs_include !='' and rs_lib!=''):
+    #if(rs_ide!='' and rs_bin!= '' and rs_include !='' and rs_lib!=''):
         
         if env_ok==False:
             ui.setRunbutton(True)
