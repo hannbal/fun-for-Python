@@ -1,1 +1,2 @@
-fun-for-python
+# fun-for-Python
+simple staff code by Python
